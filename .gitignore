@@ -1,0 +1,54 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── uv ────────────────────────────────────────────────────────────────────────
+# uv.lock is committed for reproducible installs
+
+# ── Secrets ───────────────────────────────────────────────────────────────────
+.env
+.env.local
+*.env
+
+# ── Database artifacts ────────────────────────────────────────────────────────
+chroma_db/
+
+# ── Node.js ───────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ── Next.js ───────────────────────────────────────────────────────────────────
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.code-workspace
+
+# ── Claude Code ───────────────────────────────────────────────────────────────
+.claude/

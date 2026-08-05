@@ -1,0 +1,13 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+dockerTarget = "prod"
+
+[deploy]
+# Runs DB migrations before the new container goes live
+releaseCommand = "alembic upgrade head"
+startCommand = "uvicorn ideaforge.main:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/health"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

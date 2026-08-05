@@ -1,0 +1,196 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme CSS variables ─────────────────────────────────────────────────── */
+:root {
+  --bg:         #0E0E12;
+  --surface:    #16161E;
+  --elevated:   #1E1E28;
+  --border:     #2E2E3E;
+  --accent:     #7C5CFC;
+  --accent-glow:rgba(124, 92, 252, 0.25);
+  --text:       #E8E8F2;
+  --muted:      #6868A0;
+}
+
+/* Dark theme (default) */
+.dark {
+  --bg:         #0E0E12;
+  --surface:    #16161E;
+  --elevated:   #1E1E28;
+  --border:     #2E2E3E;
+  --accent:     #7C5CFC;
+  --accent-glow:rgba(124, 92, 252, 0.25);
+  --text:       #E8E8F2;
+  --muted:      #6868A0;
+}
+
+/* Black theme */
+.black {
+  --bg:         #000000;
+  --surface:    #080808;
+  --elevated:   #101010;
+  --border:     #1C1C1C;
+  --accent:     #8B5CF6;
+  --accent-glow:rgba(139, 92, 246, 0.3);
+  --text:       #F0F0F8;
+  --muted:      #5858A0;
+}
+
+/* ── Base reset ──────────────────────────────────────────────────────────── */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom scrollbar ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* ── Film grain effect (Godfather pages) ─────────────────────────────────── */
+.film-grain::after {
+  content: '';
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 9999;
+  animation: grain 8s steps(10) infinite;
+}
+
+@keyframes grain {
+  0%,100% { transform: translate(0,0) }
+  10%     { transform: translate(-2%,-3%) }
+  20%     { transform: translate(3%, 2%) }
+  30%     { transform: translate(-1%, 4%) }
+  40%     { transform: translate(4%,-1%) }
+  50%     { transform: translate(-3%, 3%) }
+  60%     { transform: translate(2%,-4%) }
+  70%     { transform: translate(-4%, 2%) }
+  80%     { transform: translate(3%, 1%) }
+  90%     { transform: translate(-2%,-2%) }
+}
+
+/* ── Vignette overlay ────────────────────────────────────────────────────── */
+.vignette::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ── Gold shimmer text ───────────────────────────────────────────────────── */
+.gold-shimmer {
+  background: linear-gradient(90deg, #C9A84C 0%, #F5DFA0 30%, #C9A84C 50%, #8B7335 70%, #C9A84C 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center }
+  100% { background-position: 200% center }
+}
+
+/* ── Scan line button effect ─────────────────────────────────────────────── */
+.btn-gf {
+  position: relative;
+  overflow: hidden;
+}
+.btn-gf::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+  transition: none;
+}
+.btn-gf:hover::before {
+  animation: scan 0.6s ease-in-out;
+}
+
+@keyframes scan {
+  0%   { left: -60% }
+  100% { left: 160% }
+}
+
+/* ── Markdown report styles ──────────────────────────────────────────────── */
+.prose-cinema {
+  color: var(--text);
+  max-width: none;
+}
+.prose-cinema h1, .prose-cinema h2, .prose-cinema h3 {
+  color: white;
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 700;
+  margin: 1.5em 0 0.5em;
+}
+.prose-cinema h1 { font-size: 1.875rem; }
+.prose-cinema h2 {
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4em;
+}
+.prose-cinema h3 { font-size: 1.1rem; color: var(--accent); }
+.prose-cinema p  { margin: 0.75em 0; line-height: 1.7; color: var(--text); }
+.prose-cinema ul, .prose-cinema ol { margin: 0.75em 0 0.75em 1.5em; }
+.prose-cinema li { margin: 0.3em 0; line-height: 1.6; }
+.prose-cinema strong { color: white; font-weight: 600; }
+.prose-cinema blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 0.5em 1em;
+  margin: 1em 0;
+  background: var(--surface);
+  border-radius: 0 8px 8px 0;
+  color: var(--muted);
+  font-style: italic;
+}
+.prose-cinema code {
+  background: var(--elevated);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.85em;
+  color: var(--accent);
+}
+.prose-cinema table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+}
+.prose-cinema th {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 0.6em 1em;
+  text-align: left;
+  font-weight: 600;
+  color: white;
+}
+.prose-cinema td {
+  border: 1px solid var(--border);
+  padding: 0.5em 1em;
+  color: var(--text);
+}
+.prose-cinema tr:nth-child(even) td { background: var(--surface); }

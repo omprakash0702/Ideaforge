@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment secrets
+.env
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.xml
+
+# Tooling
+.ruff_cache/
+.mypy_cache/
+
+# RAG — ChromaDB local vector store (never commit binary DB files)
+chroma_db/
+
+# IDE
+.idea/
+.vscode/
+*.swp
