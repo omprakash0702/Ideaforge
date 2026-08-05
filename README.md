@@ -198,11 +198,28 @@ Fail-open: if Groq is unavailable, Tier 2 is skipped and Tier 1 still applies.
 
 ---
 
+## Live URLs
+
+| | URL |
+|---|---|
+| **Frontend** | https://ideaforge-frontend-1006031252410.asia-south1.run.app |
+| **Backend API** | https://ideaforge-backend-1006031252410.asia-south1.run.app |
+| **Swagger docs** | https://ideaforge-backend-1006031252410.asia-south1.run.app/docs |
+
+---
+
 ## Deployment
 
-GCP Cloud Run (backend + frontend), Cloud SQL PostgreSQL 15 with pgvector extension, GCE e2-micro for Neo4j Community Edition (free tier).
+| Component | Platform | Details |
+|---|---|---|
+| Frontend | GCP Cloud Run | `asia-south1`, scales to 0 |
+| Backend | GCP Cloud Run | `asia-south1`, scales to 0 |
+| PostgreSQL + pgvector | GCP Cloud SQL | PostgreSQL 15, `db-f1-micro`, `asia-south1` |
+| Neo4j | GCP GCE | `e2-micro`, `asia-south1-b`, Community Edition |
+| Secrets | GCP Secret Manager | API keys, DB URL, Neo4j credentials |
+| Images | GCP Artifact Registry | `asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge` |
 
-CI/CD: Cloud Build trigger on `git push` to `main` → auto-builds Docker images → deploys to Cloud Run.
+CI/CD: Connect GitHub repo in [GCP Cloud Build Console](https://console.cloud.google.com/cloud-build/triggers) → trigger on push to `main` → `cloudbuild.yaml` handles build + migrate + deploy automatically.
 
 ---
 
@@ -223,5 +240,5 @@ CI/CD: Cloud Build trigger on `git push` to `main` → auto-builds Docker images
 | Neo4j idea lineage graph | ✅ Done |
 | RAG — document context (pgvector) | ✅ Done |
 | Content guardrails | ✅ Done |
+| GCP deployment | ✅ Done |
 | Testing | Partial |
-| GCP deployment | In progress |

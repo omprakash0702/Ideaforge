@@ -1,0 +1,89 @@
+steps:
+  # ── Backend ────────────────────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: build-backend
+    args:
+      - build
+      - --target=prod
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/backend:$COMMIT_SHA
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/backend:latest
+      - backend
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-backend
+    waitFor: [build-backend]
+    args:
+      - push
+      - --all-tags
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/backend
+
+  # ── Run DB migrations before deploying backend ─────────────────────────────
+  - name: asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/backend:$COMMIT_SHA
+    id: migrate
+    waitFor: [push-backend]
+    entrypoint: sh
+    args:
+      - -c
+      - alembic upgrade head
+    secretEnv: [DATABASE_URL]
+
+  # ── Deploy backend to Cloud Run ────────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-backend
+    waitFor: [migrate]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ideaforge-backend
+      - --image=asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/backend:$COMMIT_SHA
+      - --region=asia-south1
+      - --platform=managed
+      - --project=$PROJECT_ID
+
+  # ── Frontend ───────────────────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: build-frontend
+    waitFor: ['-']
+    args:
+      - build
+      - --build-arg
+      - NEXT_PUBLIC_API_URL=https://ideaforge-backend-1006031252410.asia-south1.run.app/api/v1
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/frontend:$COMMIT_SHA
+      - -t
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/frontend:latest
+      - frontend
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-frontend
+    waitFor: [build-frontend]
+    args:
+      - push
+      - --all-tags
+      - asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/frontend
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    id: deploy-frontend
+    waitFor: [push-frontend]
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ideaforge-frontend
+      - --image=asia-south1-docker.pkg.dev/$PROJECT_ID/ideaforge/frontend:$COMMIT_SHA
+      - --region=asia-south1
+      - --platform=managed
+      - --project=$PROJECT_ID
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/database-url/versions/latest
+      env: DATABASE_URL
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1200s
