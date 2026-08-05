@@ -19,9 +19,6 @@ dependencies = [
     # ── Agent workflow ───────────────────────────────────────────────────────────
     "langgraph>=0.2.0",
 
-    # ── Cache ─────────────────────────────────────────────────────────────────────
-    "redis[hiredis]>=5.2.0",             # async Redis client (hiredis = fast C parser)
-
     # ── LLM providers ────────────────────────────────────────────────────────────
     # Primary: OpenAI GPT (orchestration, complex reasoning)
     "langchain-openai>=0.3.0",

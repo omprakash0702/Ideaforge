@@ -1,7 +1,6 @@
 from functools import lru_cache
 from typing import Annotated
 
-import redis.asyncio as aioredis
 from fastapi import Depends
 from neo4j import AsyncDriver
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ideaforge.core.config import get_settings
 from ideaforge.infrastructure.database.neo4j import get_neo4j_driver
 from ideaforge.infrastructure.database.postgres import get_db_session
-from ideaforge.infrastructure.cache.redis import get_redis_client
 from ideaforge.infrastructure.repositories.user_repository import SQLUserRepository
 from ideaforge.infrastructure.repositories.project_repository import SQLProjectRepository
 from ideaforge.infrastructure.repositories.idea_repository import SQLIdeaRepository
@@ -36,7 +34,6 @@ from ideaforge.workflow.deps import WorkflowDeps
 # ── Infrastructure aliases ────────────────────────────────────────────────────
 DBSession = Annotated[AsyncSession, Depends(get_db_session)]
 Neo4jDriver = Annotated[AsyncDriver, Depends(get_neo4j_driver)]
-RedisClient = Annotated[aioredis.Redis, Depends(get_redis_client)]
 
 
 # ── Guardrail — singleton, created once per process ──────────────────────────

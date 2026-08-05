@@ -26,9 +26,6 @@ class Settings(BaseSettings):
     neo4j_username: str = "neo4j"
     neo4j_password: str = "password"
 
-    # ── Redis — workflow checkpointing + LLM response caching ─────────────────
-    redis_url: str = "redis://localhost:6379/0"
-
     # ── OpenAI — primary LLM (orchestration, complex reasoning) ──────────────
     openai_api_key: str = ""
     openai_model: str = "gpt-4o-mini"

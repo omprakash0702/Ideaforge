@@ -9,7 +9,6 @@ from ideaforge.core.config import get_settings
 from ideaforge.core.logging import setup_logging
 from ideaforge.infrastructure.database.neo4j import close_neo4j_driver
 from ideaforge.infrastructure.database.postgres import engine
-from ideaforge.infrastructure.cache.redis import close_redis_client
 from ideaforge.api.v1 import v1_router
 
 logger = structlog.get_logger(__name__)
@@ -40,7 +39,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
     logger.info("IdeaForge shutting down")
-    await close_redis_client()
     await close_neo4j_driver()
     await engine.dispose()
     logger.info("Shutdown complete")

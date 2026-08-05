@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from sqlalchemy import text
 
-from ideaforge.api.dependencies import DBSession, Neo4jDriver, RedisClient
+from ideaforge.api.dependencies import DBSession, Neo4jDriver
 from ideaforge.core.config import get_settings
 
 router = APIRouter(prefix="/health", tags=["health"])
@@ -32,11 +32,8 @@ async def liveness() -> HealthResponse:
 
 
 @router.get("/ready", response_model=HealthResponse, summary="Readiness check")
-async def readiness(db: DBSession, neo4j: Neo4jDriver, redis: RedisClient) -> HealthResponse:
-    """Probes PostgreSQL, Neo4j, and Redis connectivity.
-
-    Returns 200 only when all three are reachable.
-    """
+async def readiness(db: DBSession, neo4j: Neo4jDriver) -> HealthResponse:
+    """Probes PostgreSQL and Neo4j connectivity. Returns 200 only when both are reachable."""
     settings = get_settings()
     components: dict[str, ComponentHealth] = {}
     overall = "healthy"
@@ -55,14 +52,6 @@ async def readiness(db: DBSession, neo4j: Neo4jDriver, redis: RedisClient) -> He
         components["neo4j"] = ComponentHealth(status="healthy", message="Connected")
     except Exception as exc:
         components["neo4j"] = ComponentHealth(status="unhealthy", message=str(exc))
-        overall = "unhealthy"
-
-    # Redis
-    try:
-        await redis.ping()
-        components["redis"] = ComponentHealth(status="healthy", message="Connected")
-    except Exception as exc:
-        components["redis"] = ComponentHealth(status="unhealthy", message=str(exc))
         overall = "unhealthy"
 
     return HealthResponse(
