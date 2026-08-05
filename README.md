@@ -4,6 +4,16 @@ AI-powered startup idea simulator. Describe a problem — four AI founders gener
 
 ---
 
+## Live
+
+| | URL |
+|---|---|
+| **App** | https://ideaforge-frontend-1006031252410.asia-south1.run.app |
+| **API** | https://ideaforge-backend-1006031252410.asia-south1.run.app |
+| **API Docs** | https://ideaforge-backend-1006031252410.asia-south1.run.app/docs |
+
+---
+
 ## How It Works
 
 1. **Generate** — 4 AI founders (Visionary, Strategist, Architect, Analyst) independently generate startup ideas for your problem
@@ -23,11 +33,21 @@ Every input runs through two-tier content guardrails: instant keyword filter + G
 |---|---|
 | Backend | FastAPI, Python 3.12, LangGraph |
 | Primary DB | PostgreSQL 15 + pgvector (SQLAlchemy async + Alembic) |
-| Graph DB | Neo4j (idea lineage + ranking) |
+| Graph DB | Neo4j Community Edition |
 | Vector store | pgvector — document chunks stored in PostgreSQL |
 | Frontend | Next.js 15, TypeScript, Tailwind CSS |
 | LLMs | OpenAI GPT-4o-mini · Google Gemini 2.5 Flash · Groq Llama 3.3 |
-| Deployment | GCP Cloud Run · Cloud SQL · GCE (Neo4j) |
+| Deployment | GCP Cloud Run · Cloud SQL · GCE |
+
+---
+
+## LLM Providers
+
+| Provider | Model | Used For |
+|---|---|---|
+| OpenAI | `gpt-4o-mini` | Analyst agent, all 3 judges, evolution, report, embeddings |
+| Google Gemini | `gemini-2.5-flash` | Creative, Market, Builder generators |
+| Groq | `llama-3.3-70b-versatile` | Content guardrail (Tier 2 semantic check) |
 
 ---
 
@@ -46,17 +66,18 @@ IdeaForge/
 │   │   ├── infrastructure/ # PostgreSQL + Neo4j + repositories
 │   │   ├── rag/            # Document upload → pgvector → context retrieval
 │   │   └── workflow/       # LangGraph graph, nodes, state
-│   ├── alembic/            # DB migrations
+│   ├── alembic/            # DB migrations (3 applied)
 │   ├── tests/
 │   ├── Dockerfile
-│   └── docker-compose.yml
+│   └── docker-compose.yml  # local dev only
 ├── frontend/
 │   ├── src/
 │   │   ├── app/            # Pages: project list, project detail (6 tabs)
 │   │   ├── components/     # IdeaCard, IdeaGraph, ReportView, AnalyticsPanel
 │   │   └── lib/            # API client, utils
 │   └── Dockerfile
-└── docs/                   # Architecture, data model, API, agent design docs
+├── docs/                   # Architecture, data model, API, agent design docs
+└── cloudbuild.yaml         # GCP Cloud Build pipeline
 ```
 
 ---
@@ -69,7 +90,7 @@ IdeaForge/
 |---|---|
 | Python | 3.12+ |
 | uv | latest — `pip install uv` |
-| Node.js | 20+ |
+| Node.js | 22+ |
 | Docker + Compose V2 | latest |
 
 ### Backend
@@ -124,26 +145,16 @@ Base URL: `/api/v1`
 | DELETE | `/projects/{id}` | Delete project |
 | POST | `/users` | Create user |
 | GET | `/users/{id}/projects` | User project history |
-| GET | `/health` | Liveness check |
+| GET | `/health` | Liveness |
 | GET | `/health/ready` | Readiness — probes PostgreSQL + Neo4j |
 
-Full interactive schema: http://localhost:8000/docs
-
----
-
-## LLM Providers
-
-| Provider | Model | Used For |
-|---|---|---|
-| OpenAI | `gpt-4o-mini` | Analyst agent, all 3 judges, evolution, report, embeddings |
-| Google Gemini | `gemini-2.5-flash` | Creative, Market, Builder generators |
-| Groq | `llama-3.3-70b-versatile` | Content guardrail (Tier 2 semantic check) |
+Full interactive schema: https://ideaforge-backend-1006031252410.asia-south1.run.app/docs
 
 ---
 
 ## Environment Variables
 
-Copy `backend/.env.example` → `backend/.env` and fill in:
+Copy `backend/.env.example` → `backend/.env`:
 
 ```env
 # Required
@@ -187,39 +198,64 @@ uv run pytest -m "not db"     # skip tests that need a live database
 
 ---
 
-## Content Guardrails
-
-Two-tier — runs on every user input before anything is saved:
-
-- **Tier 1** — Keyword regex filter (instant, zero API cost)
-- **Tier 2** — Groq LLM semantic check (~500ms). Catches indirect violations like coded markets, euphemistic scams, disguised adult platforms
-
-Fail-open: if Groq is unavailable, Tier 2 is skipped and Tier 1 still applies.
-
----
-
-## Live URLs
-
-| | URL |
-|---|---|
-| **Frontend** | https://ideaforge-frontend-1006031252410.asia-south1.run.app |
-| **Backend API** | https://ideaforge-backend-1006031252410.asia-south1.run.app |
-| **Swagger docs** | https://ideaforge-backend-1006031252410.asia-south1.run.app/docs |
-
----
-
 ## Deployment
 
 | Component | Platform | Details |
 |---|---|---|
 | Frontend | GCP Cloud Run | `asia-south1`, scales to 0 |
 | Backend | GCP Cloud Run | `asia-south1`, scales to 0 |
-| PostgreSQL + pgvector | GCP Cloud SQL | PostgreSQL 15, `db-f1-micro`, `asia-south1` |
-| Neo4j | GCP GCE | `e2-micro`, `asia-south1-b`, Community Edition |
-| Secrets | GCP Secret Manager | API keys, DB URL, Neo4j credentials |
+| PostgreSQL + pgvector | GCP Cloud SQL | PostgreSQL 15, `db-f1-micro` |
+| Neo4j | GCP GCE `e2-micro` | `asia-south1-b`, Community Edition |
+| Secrets | GCP Secret Manager | API keys, DB credentials |
 | Images | GCP Artifact Registry | `asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge` |
 
-CI/CD: Connect GitHub repo in [GCP Cloud Build Console](https://console.cloud.google.com/cloud-build/triggers) → trigger on push to `main` → `cloudbuild.yaml` handles build + migrate + deploy automatically.
+To redeploy manually after changes:
+
+```bash
+# Backend
+docker build --target=prod -t asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge/backend:latest backend/
+docker push asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge/backend:latest
+gcloud run deploy ideaforge-backend --image=...latest --region=asia-south1 --project=talentscout-ai-001
+
+# Frontend
+docker build --build-arg NEXT_PUBLIC_API_URL=https://ideaforge-backend-1006031252410.asia-south1.run.app/api/v1 \
+  -t asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge/frontend:latest frontend/
+docker push asia-south1-docker.pkg.dev/talentscout-ai-001/ideaforge/frontend:latest
+gcloud run deploy ideaforge-frontend --image=...latest --region=asia-south1 --project=talentscout-ai-001
+```
+
+---
+
+## Work in Progress
+
+- **Testing** — unit + integration test coverage is partial; repository-layer tests exist, agent and workflow tests pending
+- **Auth** — no user authentication yet; any user can access any project by ID. JWT or session-based auth needed before sharing with public users
+- **Rate limiting** — no per-user or per-IP limits on workflow runs; one run costs ~20 LLM API calls across three providers
+- **Error boundaries** — frontend has no React error boundaries; a failed API call can leave the UI in a broken state
+- **Pagination** — `/ideas`, `/evaluations`, `/projects` endpoints return all rows with no limit; will become slow at scale
+
+---
+
+## Roadmap
+
+### Near-term
+- [ ] Add JWT authentication (FastAPI Users or custom)
+- [ ] Rate limit workflow runs per user (max 3/day on free tier)
+- [ ] Frontend error boundaries + loading skeletons
+- [ ] Paginate all list endpoints
+
+### Medium-term
+- [ ] **Comparison mode** — run the same problem twice with different constraints and compare winning ideas side-by-side
+- [ ] **Export** — download the full report as PDF or Notion page
+- [ ] **Idea history search** — semantic search across all past winning ideas using pgvector
+- [ ] **Public gallery** — opt-in sharing of winning ideas with a public URL
+
+### Future / Experimental
+- [ ] **Simulation engine** — run a 12-month market simulation on the winning idea (hiring, revenue, churn)
+- [ ] **Competitor radar** — auto-fetch real competitors via DuckDuckGo and inject into judge context
+- [ ] **Multilingual support** — Sarvam AI for Indian language input/output (Hindi, Tamil, Telugu, etc.)
+- [ ] **MCP integration** — use IdeaForge as a tool from Claude Desktop via the included MCP server
+- [ ] **Custom judge personas** — let users define their own judge (e.g. "YC Partner", "Angel from fintech")
 
 ---
 
@@ -241,4 +277,9 @@ CI/CD: Connect GitHub repo in [GCP Cloud Build Console](https://console.cloud.go
 | RAG — document context (pgvector) | ✅ Done |
 | Content guardrails | ✅ Done |
 | GCP deployment | ✅ Done |
-| Testing | Partial |
+| Auth + rate limiting | 🔲 Planned |
+| Testing (full coverage) | 🔲 Planned |
+| Comparison mode | 🔲 Planned |
+| Export (PDF / Notion) | 🔲 Planned |
+| Simulation engine | 🔲 Experimental |
+| Multilingual (Sarvam) | 🔲 Experimental |
