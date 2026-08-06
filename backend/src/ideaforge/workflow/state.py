@@ -17,6 +17,7 @@ class IdeaForgeState(TypedDict, total=False):
 
     # ── RAG — retrieved document context (injected before generation) ─────────
     rag_context: NotRequired[str]  # joined chunks from RAGPipeline.get_context()
+    web_context: NotRequired[str]  # live market research from DuckDuckGo
 
     # ── Stage outputs — populated as the workflow progresses ──────────────────
     generated_ideas: NotRequired[list[dict]]    # Generator node output (6 ideas)

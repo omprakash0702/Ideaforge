@@ -57,7 +57,7 @@ async def _web_search(query: str, max_results: int = 4) -> str:
         )
 
     try:
-        return await asyncio.wait_for(asyncio.to_thread(_sync), timeout=15.0)
+        return await asyncio.wait_for(asyncio.to_thread(_sync), timeout=5.0)
     except (asyncio.TimeoutError, Exception) as exc:
         logger.warning("web_search.failed", error=str(exc))
         return ""
@@ -69,13 +69,27 @@ def make_rag_fetch_node(deps: WorkflowDeps):
     async def node(state: IdeaForgeState) -> dict:
         problem = state["problem_statement"]
         project_id = state["project_id"]
-        try:
-            ctx = await deps.rag.get_context(project_id, problem)
-            logger.info("rag.fetched", project_id=project_id, chunks=len(ctx.chunks))
-            return {"rag_context": ctx.context_text}
-        except Exception as exc:
-            logger.warning("rag.fetch_failed", project_id=project_id, error=str(exc))
-            return {"rag_context": ""}
+        search_query = f"startup market opportunity {problem[:120]}"
+
+        # Run RAG retrieval and web search in parallel — both finish before generation starts
+        rag_task = asyncio.create_task(deps.rag.get_context(project_id, problem))
+        web_task = asyncio.create_task(_web_search(search_query))
+
+        rag_ctx, web_ctx = await asyncio.gather(rag_task, web_task, return_exceptions=True)
+
+        if isinstance(rag_ctx, Exception):
+            logger.warning("rag.fetch_failed", project_id=project_id, error=str(rag_ctx))
+            rag_text = ""
+        else:
+            logger.info("rag.fetched", project_id=project_id, chunks=len(rag_ctx.chunks))
+            rag_text = rag_ctx.context_text
+
+        if isinstance(web_ctx, Exception):
+            web_ctx = ""
+        elif web_ctx:
+            logger.info("web_search.done", project_id=project_id, chars=len(web_ctx))
+
+        return {"rag_context": rag_text, "web_context": web_ctx or ""}
 
     return node
 
@@ -99,11 +113,8 @@ def make_generate_node(deps: WorkflowDeps):
         await _set_status(project_id, ProjectStatus.GENERATING)
         logger.info("generate.start", project_id=str(project_id), retry=retry_count)
 
-        # Web search for live market intelligence (runs in parallel with nothing to block it)
-        search_query = f"startup market opportunity {problem[:120]}"
-        web_ctx = await _web_search(search_query)
-        if web_ctx:
-            logger.info("web_search.done", project_id=str(project_id), chars=len(web_ctx))
+        # web_context was fetched in rag_fetch node (parallel with RAG) — read from state
+        web_ctx = state.get("web_context") or ""
 
         # Run all 4 generators concurrently (Gemini: creative/market/builder + OpenAI: analyst)
         results = await asyncio.gather(

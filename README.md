@@ -228,9 +228,10 @@ gcloud run deploy ideaforge-frontend --image=...latest --region=asia-south1 --pr
 
 ## Work in Progress
 
-- **Testing** — unit + integration test coverage is partial; repository-layer tests exist, agent and workflow tests pending
-- **Auth** — no user authentication yet; any user can access any project by ID. JWT or session-based auth needed before sharing with public users
+- **User authentication** — no login system yet; any user can access any project by ID. JWT-based auth is the next priority before opening to public users
+- **RAG document upload UI** — the backend supports document uploads via `POST /projects/{id}/documents` and stores embeddings in pgvector, but there is no frontend UI for it yet; currently requires a manual API call
 - **Rate limiting** — no per-user or per-IP limits on workflow runs; one run costs ~20 LLM API calls across three providers
+- **Testing** — unit + integration test coverage is partial; repository-layer tests exist, agent and workflow tests pending
 - **Error boundaries** — frontend has no React error boundaries; a failed API call can leave the UI in a broken state
 - **Pagination** — `/ideas`, `/evaluations`, `/projects` endpoints return all rows with no limit; will become slow at scale
 
@@ -240,6 +241,7 @@ gcloud run deploy ideaforge-frontend --image=...latest --region=asia-south1 --pr
 
 ### Near-term
 - [ ] Add JWT authentication (FastAPI Users or custom)
+- [ ] Frontend UI for RAG document upload
 - [ ] Rate limit workflow runs per user (max 3/day on free tier)
 - [ ] Frontend error boundaries + loading skeletons
 - [ ] Paginate all list endpoints
@@ -275,9 +277,11 @@ gcloud run deploy ideaforge-frontend --image=...latest --region=asia-south1 --pr
 | Frontend dashboard | ✅ Done |
 | Neo4j idea lineage graph | ✅ Done |
 | RAG — document context (pgvector) | ✅ Done |
+| RAG — frontend upload UI | 🔲 Planned |
 | Content guardrails | ✅ Done |
 | GCP deployment | ✅ Done |
-| Auth + rate limiting | 🔲 Planned |
+| User authentication (JWT) | 🔲 Planned |
+| Rate limiting | 🔲 Planned |
 | Testing (full coverage) | 🔲 Planned |
 | Comparison mode | 🔲 Planned |
 | Export (PDF / Notion) | 🔲 Planned |
